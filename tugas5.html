@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Tugas 5 JS - Manajemen Produk</title>
+  <style>
+body {
+  font-family: Arial, sans-serif;
+  background: #f3f4f6;
+  margin: 0;
+  padding: 30px 15px;
+}
+
+.container {
+  max-width: 700px;
+  margin: 0 auto;
+}
+
+h1 {
+  margin-bottom: 20px;
+}
+
+.card {
+  background: white;
+  padding: 20px;
+  margin-bottom: 20px;
+  border-radius: 10px;
+}
+
+/* Form */
+.form-row {
+  display: flex;
+  gap: 10px;
+}
+
+input {
+  flex: 1;
+  padding: 8px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+}
+
+input.kecil {
+  flex: 0 0 70px;
+}
+
+button {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 5px;
+  background: #2563eb;
+  color: white;
+  cursor: pointer;
+}
+
+button.hapus {
+  background: #dc2626;
+}
+
+/* Tabel */
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+th,
+td {
+  padding: 10px;
+  text-align: left;
+  border-bottom: 1px solid #ddd;
+}
+
+.kosong {
+  text-align: center;
+  color: gray;
+}
+
+#pesan {
+  margin-top: 10px;
+  color: red;
+}
+
+</style>
+</head>
+<body>
+  <div class="container">
+    <h1>Manajemen Produk</h1>
+
+    <div class="card">
+      <h2>Tambah Produk</h2>
+      <form id="formTambah" class="form-row">
+        <input type="number" id="inputId" class="kecil" placeholder="ID" min="1" required>
+        <input type="text" id="inputNama" placeholder="Nama produk" required>
+        <input type="number" id="inputHarga" placeholder="Harga (Rp)" min="0" required>
+        <button type="submit">Tambah</button>
+      </form>
+      <div id="pesan"></div>
+    </div>
+
+    <div class="card">
+      <h2>Daftar Produk</h2>
+      <table>
+        <thead>
+          <tr><th>ID</th><th>Nama</th><th>Harga</th><th></th></tr>
+        </thead>
+        <tbody id="daftarProduk"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <script>
+    // Data Produk
+    let produkList = [
+      { id: 1, nama: "Laptop", harga: 12000000 },
+      { id: 2, nama: "Smartphone", harga: 5000000 },
+      { id: 3, nama: "Headphone", harga: 750000 },
+      { id: 4, nama: "Keyboard", harga: 450000 },
+      { id: 5, nama: "Mouse", harga: 250000 }
+    ];
+
+    const formatRupiah = (angka) => "Rp" + angka.toLocaleString("id-ID");
+
+    // ID berikutnya = ID terbesar + 1 (dipakai untuk mengisi kolom ID otomatis)
+    const idBerikutnya = () =>
+      produkList.length ? Math.max(...produkList.map((p) => p.id)) + 1 : 1;
+
+    // nama fungsi bebas
+    const eventHandler = {
+      tambah(event) {
+        event.preventDefault();
+        const id = Number(document.getElementById("inputId").value);
+        const nama = document.getElementById("inputNama").value.trim();
+        const harga = Number(document.getElementById("inputHarga").value);
+        const pesan = document.getElementById("pesan");
+
+        if (produkList.some((p) => p.id === id)) {
+          pesan.textContent = `ID ${id} sudah dipakai, gunakan ID lain.`;
+          return;
+        }
+        pesan.textContent = "";
+        tambahProduk(id, nama, harga);
+        event.target.reset();
+        tampilkanProduk();
+      },
+      hapus(event) {
+        // event delegation: listener di tbody, tombol dikenali lewat event.target
+        const tombol = event.target.closest("button[data-id]");
+        if (!tombol) return;
+        hapusProduk(Number(tombol.dataset.id));
+        tampilkanProduk();
+      }
+    };
+
+    // Menambahkan Produk dengan Spread Operator
+    function tambahProduk(id, nama, harga) {
+      produkList = [...produkList, { id, nama, harga }];
+    }
+
+    // Menghapus Produk dengan Rest Parameter
+    function hapusProduk(...idHapus) {
+      produkList = produkList.filter((produk) => !idHapus.includes(produk.id));
+    }
+
+    // Menampilkan Produk dengan Destructuring
+    function tampilkanProduk() {
+      const tbody = document.getElementById("daftarProduk");
+
+      if (produkList.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="4" class="kosong">Belum ada produk</td></tr>';
+      } else {
+        tbody.innerHTML = produkList
+          .map(({ id, nama, harga }) => `
+            <tr>
+              <td>${id}</td>
+              <td>${nama}</td>
+              <td class="harga">${formatRupiah(harga)}</td>
+              <td><button class="hapus" data-id="${id}">Hapus</button></td>
+            </tr>`)
+          .join("");
+      }
+
+      // isi otomatis kolom ID dengan ID berikutnya
+      document.getElementById("inputId").value = idBerikutnya();
+
+      console.log("=== Daftar Produk ===");
+      produkList.forEach(({ id, nama, harga }) => {
+        console.log(`${id}. ${nama} - ${formatRupiah(harga)}`);
+      });
+    }
+
+    // Event Listener
+    document.getElementById("formTambah").addEventListener("submit", eventHandler.tambah);
+    document.getElementById("daftarProduk").addEventListener("click", eventHandler.hapus);
+
+    tampilkanProduk();
+    // contoh penambahan data
+    tambahProduk(6, "Tablet", 7000000);
+    tampilkanProduk();
+    hapusProduk(2);
+    tampilkanProduk();
+  </script>
+</body>
+</html>
